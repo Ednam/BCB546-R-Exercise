@@ -1,0 +1,79 @@
+---
+title: "Assignment1_R"
+output: html_document
+---
+
+```{r}
+cats <- data.frame(coat = c("calico", "black", "tabby"), weight = c(2.1, 5.0, 3.2), likes_string = c(1, 0, 1))
+str(df)
+
+
+
+```
+
+```{r}
+typeof(cats)
+class(cats)
+is.data.frame(cats)
+
+```
+
+Reading data into a data frame
+```{r}
+cats <- read.csv(file = "feline-data.csv")
+cats
+```
+
+Exploring data
+```{r}
+cats$weight
+cats$coat
+cats$weight + 2#Say we discovered that the scale weighs two Kg light
+paste("My cat is", cats$coat)
+typeof(cats$weight)
+```
+
+Subsetting data
+```{r}
+#Using [ will always return a list. If you want to subset a list, but not extract an element, then you will likely use [.
+cats[1]
+
+#To extract individual elements of a list, you need to use the double-square bracket function: [[.
+
+cats[[1]]
+
+```
+
+
+Adding columns
+```{r}
+age <- c(2,3,5,12)
+cats
+
+age <- c(4,5,8)
+cats <- cbind(cats, age)
+cats
+newRow <- list("tortoiseshell", 3.3, TRUE, 9)
+cats <- rbind(cats, newRow)
+```
+
+
+
+Extracting the data
+
+```{r}
+download.file("https://raw.githubusercontent.com/vsbuffalo/bds-files/master/chapter-08-r/Dataset_S1.txt", destfile = "Dataset_S1.txt")
+d <- read.csv("Dataset_S1.txt")
+d
+
+```
+Extract SNPS between 37492472 and 37527931 on human chromosome 20
+
+
+```{r}
+d$cent <- d$start >= 25800000 & d$end <= 29700000
+summary(d$cent)
+summary(d$depth[d$start >= 25800000 & d$end <= 29700000])
+summary(d$depth[!d$cent])
+```
+
