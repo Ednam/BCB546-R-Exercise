@@ -320,8 +320,8 @@ ggplot(Genotype_joined, aes(x=count_amplicons, y=count_gene)) + geom_point() + g
 
 ```
 
-#This section was added afterwards
 
+#This section added afterwards
 ```{r}
 
 Teosinte <- subset(fang_et_al, Group=="ZMPBA"| Group == "ZMPIL" | Group =="ZMPJA")
@@ -348,7 +348,7 @@ Teosinte_melt_sorted<-arrange(Teosinte_melt,Sample_ID,Group)#Sort the data by sa
 ```
 
 #Plotting homozygous, heterozygous and NA from teosinte Extracted data
-I added this section afterwards for my own practice
+I added this chunk afterwards
 
 ```{r}
 
@@ -371,6 +371,7 @@ ggplot(Teosinte_Counts_melted,aes(x=Sample_ID,y=value,fill=variable))+geom_bar(s
 
 
 ```
+
 
 
 
