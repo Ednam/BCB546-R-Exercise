@@ -1,0 +1,266 @@
+---
+title: "Aguilar_Review[Edna]"
+author: "Fernando Silva Aguilar"
+date: "October 17, 2017"
+output: html_document
+---
+##NOTE
+* The code is readable and works nice. 
+* She has to clarify that the setwdd() in the creation of the files has to be change according to the final user or just removed. 
+* The own visualization has some inconvenients and we have to include in the geom_smooth() the method 'loess'.
+  >geom_smooth(method = 'loess')
+
+
+#Reading the data from the git hub repository
+```{r}
+fang_et_al<- read.delim ("https://raw.githubusercontent.com/EEOB-BioData/BCB546X-Fall2017/master/UNIX_Assignment/fang_et_al_genotypes.txt", header = TRUE)
+
+snp_position<-read.delim("https://raw.githubusercontent.com/EEOB-BioData/BCB546X-Fall2017/master/UNIX_Assignment/snp_position.txt", header=TRUE)
+
+```
+
+
+#Data inspection
+
+[1] 2782 986 Fang et all [1] 983 15 snp position
+
+#both data sets are data frames #Types of files list
+
+#class(fang_et_al) [1] "data.frame"
+class(snp_position)
+
+[1] "data.frame"
+```{r}
+head(fang_et_al,n=10) # print the first 10 rows of the data
+head(snp_position, n=1)
+
+dim(fang_et_al)# prints number of columns and number of rows
+dim(snp_position)
+
+colnames(fang_et_al)#Call the names of the columns
+colnames(snp_position)
+
+typeof(fang_et_al)
+typeof(snp_position)
+
+str(fang_et_al)# see data structure
+str(snp_position)
+
+class(fang_et_al)
+class(snp_position)
+
+levels(fang_et_al$Group)# inspect te levels of groups
+levels(snp_position$Chromosome)
+```
+
+#Data processing
+```{r}
+if (!require("dplyr")) install.packages("dplyr") # install dplyr if it's not already installed
+library(dplyr)
+
+maize<-subset(fang_et_al, Group== "ZMMIL"| Group =="ZMMLR"| Group=="ZMMMR")#Extract the data needed from fang_et al
+
+
+Teosinte<- subset(fang_et_al, Group=="ZMPBA"| Group == "ZMPIL" | Group =="ZMPJA")
+```
+
+#Transpose the data
+```{r}
+maize_transposed<-as.data.frame(t(maize))
+teosinte_transposed<-as.data.frame(t(Teosinte))
+class(maize_transposed)
+```
+
+#Extract the 3 columns fron snp_position (SNP_ID, Chromosome and Position). these are the columns will be helpful when merging the data sets
+
+```{r}
+Extracted_position<- subset(snp_position,select = c("SNP_ID", "Chromosome", "Position"))
+```
+
+#Joining the data. the extracted data set( maize and teosinte) merged with the extracted_snp position
+```{r}
+maize_joined<-merge(Extracted_position,maize_transposed,by.x="SNP_ID",by.y="row.names",all=TRUE)
+dim(maize_joined)
+
+Teosinte_joined<-merge(Extracted_position,teosinte_transposed,by.x="SNP_ID",by.y="row.names",all=TRUE)
+dim(Teosinte_joined)
+```
+
+#Sorting the merged files.
+
+```{r}
+maize_sorted<-arrange(maize_joined,Position)
+
+Teosinte_sorted<-arrange(Teosinte_joined,Position)
+
+levels(maize_sorted$Chromosome)
+```
+
+#Removing unwanted rows from the data
+
+```{r}
+maize_sorted<-subset(maize_sorted, !maize_sorted$Chromosome=="unknown" | !maize_sorted$Chromosome=="multiple")
+
+Teosinte_sorted<-subset(Teosinte_sorted, !Teosinte_sorted$Chromosome=="unknown" | !Teosinte_sorted$Chromosome=="multiple")
+
+maize_sorted_filtered<-maize_sorted[-c(1:6,957:983),]#remove unknown and multiple chromosomes
+Teosinte_sorted_filtered<-Teosinte_sorted[-c(1:6,957:983),]#remove unknown and multiple chromosomes
+
+View(Teosinte_sorted_filtered)
+View(maize_sorted_filtered)
+```
+
+#Re-Sort the files again
+
+```{r}
+maize_sorted_filtered<-arrange(maize_sorted_filtered,Position)#Ascending position
+
+Teosinte_sorted_filtered<-arrange(Teosinte_sorted_filtered,Position)#Ascending position
+
+View(maize_sorted_filtered)
+```
+
+#Extracting files for each chromosome. #Split the data into the 10 different chromosomes. I used a for loop #for this, i had to Set the directory where i wouldlike to save the extracted files. These files have the missing data represented by ?
+
+```{r}
+setwd("C:/Users/Edna/BCB546X-Fall2017/R_lessons/EEOB546_R_lesson/data")
+for(i in 1:10){
+ data_df<-maize_sorted_filtered[maize_sorted_filtered[,2]==i,]
+ write.csv(data_df, paste("maize_chr",i,".csv",sep=""),row.names=F)}# extract 10 files ascending
+
+for(i in 1:10){
+ data_df<-Teosinte_sorted_filtered[Teosinte_sorted_filtered[,2]==i,]
+ write.csv(data_df, paste("Teosinte_chr",i,".csv",sep=""),row.names=F)}
+
+```
+
+#Sort descending order and replacing ? with -/-
+
+```{r}
+maize_sorted_descending<-arrange(maize_sorted_filtered, desc(Position))
+
+Teosinte_sorted_descending<-arrange(Teosinte_sorted_filtered,desc(Position))
+
+maize_sorted_descending[]<- lapply(maize_sorted_descending, as.character)
+maize_sorted_descending[maize_sorted_descending=='?/?'] <- '-/-'
+
+class(maize_sorted_descending)
+
+
+Teosinte_sorted_descending[]<- lapply(Teosinte_sorted_descending, as.character)
+Teosinte_sorted_descending[Teosinte_sorted_descending=='?/?'] <- '-/-'
+```
+
+#Extracting the files in this data that has been sorted in descending order and the missing data replaced with -/-
+```{r}
+setwd("C:/Users/Edna/BCB546X-Fall2017/R_lessons/EEOB546_R_lesson/data")
+for(i in 1:10){
+ data_df<-maize_sorted_descending[maize_sorted_descending[,2]==i,]
+ write.csv(data_df, paste("maize_desc_chr",i,".csv",sep=""),row.names=F)}
+
+for(i in 1:10){
+ data_df<-Teosinte_sorted_descending[Teosinte_sorted_descending[,2]==i,]
+ write.csv(data_df, paste("Teosinte_desc_chr",i,".csv",sep=""),row.names=F)}
+```
+
+#############Part II#############
+
+#Install the required packeages
+
+```{r}
+if (!require("ggplot2")) install.packages("ggplot2") # install ggplot2 if it's not already installed
+library(ggplot2)
+
+if (!require("reshape2")) install.packages("reshape2") # install reshape2 if it's not already installed
+library(reshape2)
+```
+
+#read the original data and transpose
+```{r}
+fang_et_al_transposed<-as.data.frame(t(fang_et_al))
+dim(fang_et_al_transposed)
+```
+
+#merge the data with snp_position
+```{r}
+Genotype_joined<-merge(snp_position, fang_et_al_transposed, by.x="SNP_ID",by.y="row.names",all=TRUE)
+
+Genotype_joined<-Genotype_joined[-c(984:986),]
+View(Genotype_joined)
+```
+
+Visualizations using ggplot2
+
+###total nukber of SNPs per chromosome and the group that has the most number of SNPs
+```{r}
+Genotype_joined$Chromosome<-factor(Genotype_joined$Chromosome, levels = c("1","2","3","4","5","6","7","8","9","10","unknown","multiple"))
+ggplot(Genotype_joined)+ geom_bar(aes(Genotype_joined$Chromosome))+xlab("Chromosome") +ylab("Total Number of SNPs")
+```
+
+###### finding the group that has the most number of snps
+```{r}
+ggplot(fang_et_al)+geom_bar(aes(fang_et_al$Group))+xlab("SNPS Group")+ylab("Total SNPS")
+```
+
+###Missing data and amount of heterozygosity using the melt function
+
+```{r}
+Genotype<-colnames(fang_et_al)[-c(1:3)]
+Genotype
+
+Genotypes_melted<-melt(fang_et_al,measure.vars = Genotype)
+Genotypes_melted
+
+
+Genotypes_melted[Genotypes_melted =="?/?"]=NA ##replacing ? with NA
+```
+
+
+Create a new column for homozygotes and heterozygotes and using true or false and NA to represent missing data
+```{r}
+Genotypes_melted$Homozygotes_heterozygotes<-(Genotypes_melted$value=="A/A"|Genotypes_melted$value =="C/C"|Genotypes_melted$value=="G/G"|Genotypes_melted$value=="T/T")
+#Sort the data by sample ID and group
+Genotypes_melted_sorted<-arrange(Genotypes_melted,Sample_ID,Group)
+```
+
+
+#Plotting propotion of homozygotes, heterozygotes and NA
+
+```{r}
+if (!require("plyr")) install.packages("plyr") # install plyr if it's not already installed
+library(plyr)
+
+Individual_Counts<-ddply(Genotypes_melted_sorted,c("Sample_ID"),summarise,total_homozygous=sum(Homozygotes_heterozygotes,na.rm=TRUE),total_heterozygous=sum(!Homozygotes_heterozygotes,na.rm = TRUE), total_NA=sum(is.na(Homozygotes_heterozygotes)))
+
+
+Individual_Counts_melted<-melt(Individual_Counts,measure.vars = c("total_homozygous","total_heterozygous","total_NA"))
+
+
+
+ggplot(Individual_Counts_melted,aes(x=Sample_ID,y=value,fill=variable))+geom_bar(stat="identity",position = "stack")#plot homozygotes and heterozygotes per sample_ID
+```
+
+Homozygotes and heterozygotes per group
+```{r}
+Individual_Group<-ddply(Genotypes_melted_sorted,c("Group"),summarise,total_homozygous=sum(Homozygotes_heterozygotes,na.rm=TRUE),total_heterozygous=sum(!Homozygotes_heterozygotes,na.rm = TRUE), total_NA=sum(is.na(Homozygotes_heterozygotes)))
+
+
+Individual_Group_melted<-melt(Individual_Group,measure.vars = c("total_homozygous","total_heterozygous","total_NA"))
+
+
+
+ggplot(Individual_Group_melted,aes(x=Group,y=value,fill=variable))+geom_bar(stat="identity",position = "stack")# plot homozygotes and heterozygotes per Group
+```
+
+#My own visualization of dta
+
+```{r}
+Genotype_joined$candidate.random<-factor(Genotype_joined$candidate.random, levels = c("candidate","random"))
+
+
+ggplot(Genotype_joined)+ geom_bar(aes(Genotype_joined$candidate.random))+xlab("candidate.random") +ylab("Total Number of SNPs") #candidate.random vs gene
+
+ggplot(Genotype_joined, aes(x=count_amplicons, y=count_gene)) + geom_point() + geom_smooth(method = 'loess')# count amplicons vs gene
+
+```
+
